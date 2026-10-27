@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cute Scientific Java Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ffe5ec 0%, #ffebf0 100%);
+        }
+        .calc-container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 30px;
+            box-shadow: 0 10px 25px rgba(255, 182, 193, 0.4);
+            width: 340px;
+            border: 4px solid #ffccd5;
+        }
+        .screen {
+            background-color: #f7f9fa;
+            border: 2px solid #ffccd5;
+            border-radius: 20px;
+            padding: 15px;
+            text-align: right;
+            margin-bottom: 20px;
+            min-height: 60px;
+        }
+        .formula {
+            font-size: 14px;
+            color: #b5b5b5;
+            margin-bottom: 5px;
+            height: 18px;
+            overflow: hidden;
+        }
+        .display {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff758f;
+            word-wrap: break-word;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        button {
+            border: none;
+            padding: 15px 5px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 0px rgba(0,0,0,0.05);
+        }
+        button:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .sci { background-color: #e8f0fe; color: #6c9df6; }
+        .sci:hover { background-color: #d2e3fc; }
+        .num { background-color: #fff0f3; color: #ff5c8a; }
+        .num:hover { background-color: #ffccd5; }
+        .op { background-color: #ffe5ec; color: #ff477e; }
+        .op:hover { background-color: #ffb3c1; }
+        .clear { background-color: #fceade; color: #f28482; grid-column: span 2; }
+        .clear:hover { background-color: #f7d6c1; }
+        .equal { background-color: #ff758f; color: white; grid-column: span 2; }
+        .equal:hover { background-color: #ff477e; }
+    </style>
+</head>
+<body>
+
+<div class="calc-container">
+    <div class="screen">
+        <div class="formula" id="formula"></div>
+        <div class="display" id="display">0</div>
+    </div>
+    <div class="grid">
+        <button class="clear" onclick="clearAll()">Clear</button>
+        <button class="sci" onclick="setOp('sin')">sin</button>
+        <button class="sci" onclick="setOp('cos')">cos</button>
+        
+        <button class="sci" onclick="setOp('tan')">tan</button>
+        <button class="sci" onclick="setOp('sqrt')">√</button>
+        <button class="sci" onclick="setOp('log')">log</button>
+        <button class="sci" onclick="setOp('ln')">ln</button>
+
+        <button class="sci" onclick="setOp('pow')">xʸ</button>
+        <button class="sci" onclick="appendPi()">π</button>
+        <button class="op" onclick="setOp('divide')">/</button>
+        <button class="op" onclick="setOp('multiply')">*</button>
+
+        <button class="num" onclick="appendNum('7')">7</button>
+        <button class="num" onclick="appendNum('8')">8</button>
+        <button class="num" onclick="appendNum('9')">9</button>
+        <button class="op" onclick="setOp('subtract')">-</button>
+
+        <button class="num" onclick="appendNum('4')">4</button>
+        <button class="num" onclick="appendNum('5')">5</button>
+        <button class="num" onclick="appendNum('6')">6</button>
+        <button class="op" onclick="setOp('add')">+</button>
+
+        <button class="num" onclick="appendNum('1')">1</button>
+        <button class="num" onclick="appendNum('2')">2</button>
+        <button class="num" onclick="appendNum('3')">3</button>
+        <button class="equal" onclick="calculate()">=</button>
+
+        <button class="num" style="grid-column: span 2;" onclick="appendNum('0')">0</button>
+        <button class="num" onclick="appendNum('.')">.</button>
+    </div>
+</div>
+
+<script>
+    let currentInput = '';
+    let storedInput = '';
+    let activeOperator = null;
+    let isSciOp = false;
+    let shouldReset = false;
+
+    const display = document.getElementById('display');
+    const formula = document.getElementById('formula');
+
+    function appendNum(num) {
+        if (shouldReset) {
+            currentInput = '';
+            shouldReset = false;
+        }
+        if (currentInput === '0' && num !== '.') currentInput = '';
+        if (num === '.' && currentInput.includes('.')) return;
+        currentInput += num;
+        display.innerText = currentInput;
+    }
+
+    function appendPi() {
+        if (shouldReset) shouldReset = false;
+        currentInput = 'PI';
+        display.innerText = 'π';
+    }
+
+    function setOp(op) {
+        const singleInputOps = ['sin', 'cos', 'tan', 'sqrt', 'log', 'ln'];
+        
+        if (singleInputOps.includes(op)) {
+            activeOperator = op;
+            isSciOp = true;
+            let targetVal = currentInput || display.innerText || '0';
+            if (targetVal === 'PI') targetVal = Math.PI.toString();
+            formula.innerText = `${op}(${targetVal})`;
+            calculate();
+        } else {
+            if (currentInput !== '') {
+                storedInput = currentInput;
+            } else if (storedInput === '') {
+                storedInput = display.innerText || '0';
+            }
+            activeOperator = op;
+            isSciOp = false;
+            currentInput = '';
+            shouldReset = false;
+            formula.innerText = `${storedInput === 'PI' ? 'π' : storedInput} ${getOpSymbol(op)}`;
+        }
+    }
+
+    function getOpSymbol(op) {
+        if (op === 'add') return '+';
+        if (op === 'subtract') return '-';
+        if (op === 'multiply') return '*';
+        if (op === 'divide') return '/';
+        if (op === 'pow') return '^';
+        return '';
+    }
+
+    function clearAll() {
+        currentInput = '';
+        storedInput = '';
+        activeOperator = null;
+        isSciOp = false;
+        shouldReset = false;
+        display.innerText = '0';
+        formula.innerText = '';
+    }
+
+    function computeLocally(op, v1, v2) {
+        const n1 = parseFloat(v1);
+        const n2 = parseFloat(v2);
+        switch(op) {
+            case "add": return n1 + n2;
+            case "subtract": return n1 - n2;
+            case "multiply": return n1 * n2;
+            case "divide": return n2 === 0 ? "Cannot divide by zero." : n1 / n2;
+            case "pow": return Math.pow(n1, n2);
+            case "sin": return Math.sin(n1 * Math.PI / 180);
+            case "cos": return Math.cos(n1 * Math.PI / 180);
+            case "tan": return Math.tan(n1 * Math.PI / 180);
+            case "sqrt": return n1 < 0 ? "Invalid input for sqrt." : Math.sqrt(n1);
+            case "log": return n1 <= 0 ? "Invalid input for log." : Math.log10(n1);
+            case "ln": return n1 <= 0 ? "Invalid input for ln." : Math.log(n1);
+            default: return 0;
+        }
+    }
+
+    async function calculate() {
+        if (!activeOperator) return;
+        if (!isSciOp && currentInput === '') return; 
+
+        let val1 = storedInput === 'PI' ? Math.PI.toString() : (storedInput || '0');
+        let val2 = currentInput === 'PI' ? Math.PI.toString() : (currentInput || '0');
+        
+        if (isSciOp) {
+            let target = currentInput === 'PI' ? Math.PI.toString() : (currentInput || display.innerText || '0');
+            val1 = target;
+        }
+
+        let url = `/calculate?operator=${activeOperator}&num1=${val1}&num2=${val2}`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.error) {
+                display.innerText = "Error";
+                formula.innerText = data.error;
+                currentInput = '';
+            } else {
+                let finalRes = Number(data.result).toFixed(4).replace(/\.?0+$/, "");
+                display.innerText = finalRes;
+                if (!isSciOp) formula.innerText += ` ${currentInput === 'PI' ? 'π' : currentInput} =`;
+                storedInput = data.result.toString();
+                currentInput = '';
+                activeOperator = null;
+                shouldReset = true;
+            }
+        } catch (err) {
+            let localRes = computeLocally(activeOperator, val1, val2);
+            if (typeof localRes === 'string') {
+                display.innerText = "Error";
+                formula.innerText = localRes;
+                currentInput = '';
+            } else {
+                let formattedRes = Number(localRes).toFixed(4).replace(/\.?0+$/, "");
+                display.innerText = formattedRes;
+                if (!isSciOp) formula.innerText += ` ${currentInput === 'PI' ? 'π' : currentInput} =`;
+                storedInput = localRes.toString();
+                currentInput = '';
+                activeOperator = null;
+                shouldReset = true;
+            }
+        }
+    }
+</script>
+</body>
+</html>
